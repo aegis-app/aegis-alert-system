@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ⚠️ 代替フィクスチャ (実物ではない): 調査時点 (2026-11-26) の随時・長期
+  フィード内に「顕著な大雨に関する情報」の実電文が無かったため、同系統の
+  実電文 (府県気象情報 VPFJ50、tests/fixtures には無いが 2026-11-26 に
+  随時フィードから取得した実物) の Control / Head / Body 構成そのままに、
+  標題・見出しを顕著な大雨に関する情報の定型文へ差し替えて構成した。
+-->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_add="http://xml.kishou.go.jp/jmaxml1/addition1/">
+<Control>
+<Title>府県気象情報</Title>
+<DateTime>2026-07-10T02:35:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>福岡管区気象台</EditorialOffice>
+<PublishingOffice>福岡管区気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>顕著な大雨に関する福岡県気象情報</Title>
+<ReportDateTime>2026-07-10T11:35:00+09:00</ReportDateTime>
+<TargetDateTime>2026-07-10T11:35:00+09:00</TargetDateTime>
+<EventID>FJPWB260071</EventID>
+<InfoType>発表</InfoType>
+<Serial>7</Serial>
+<InfoKind>同一現象用平文情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>福岡県では、線状降水帯による非常に激しい雨が同じ場所で降り続いています。命に危険が及ぶ土砂災害や洪水による災害発生の危険度が急激に高まっています。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Notice/>
+<Comment>
+<Text type="本文">［顕著な大雨に関する情報］
+福岡県では、線状降水帯による非常に激しい雨が同じ場所で降り続いています。命に危険が及ぶ土砂災害や洪水による災害発生の危険度が急激に高まっています。
+
+［防災事項］
+厳重に警戒してください。今後発表する防災気象情報に留意してください。</Text>
+</Comment>
+</Body>
+</Report>

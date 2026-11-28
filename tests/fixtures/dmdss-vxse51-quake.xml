@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  🧪 フィクスチャ: 震度速報 VXSE51 (DMDSS 経由想定)
+  気象庁防災情報XMLの公式フォーマット仕様に基づいて作成した合成電文。
+  対象は 2026-11-19 06:41 熊本県天草・芦北地方の地震 (P2P の
+  p2p-551.json と同一イベント)。震度速報は震源要素を持たず、発生時刻は
+  EventID から復元する形をテストする。
+  ⚠️ DMDSS 経由の実電文での検証は残タスク (DESIGN.md §19)
+-->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/" xmlns:jmx_ib="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+  <Control>
+    <Title>震度速報</Title>
+    <DateTime>2026-11-19T06:42:00+09:00</DateTime>
+    <Status>通常</Status>
+    <EditorialOffice>気象庁本庁</EditorialOffice>
+    <PublishingOffice>気象庁</PublishingOffice>
+  </Control>
+  <Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+    <Title>震度速報</Title>
+    <ReportDateTime>2026-11-19T06:42:00+09:00</ReportDateTime>
+    <TargetDateTime>2026-11-19T06:42:00+09:00</TargetDateTime>
+    <EventID>20261119064100</EventID>
+    <Serial>1</Serial>
+    <InfoType>発表</InfoType>
+    <InfoKind>地震情報</InfoKind>
+    <InfoKindVersion>1.0_1</InfoKindVersion>
+    <Headline>
+      <Text>１９日０６時４１分ころ、地震がありました。</Text>
+    </Headline>
+  </Head>
+  <Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/">
+    <Intensity>
+      <Observation>
+        <MaxInt>2</MaxInt>
+        <Pref>
+          <Name>熊本県</Name>
+          <Code>43</Code>
+          <MaxInt>2</MaxInt>
+          <Area>
+            <Name>熊本県天草・芦北</Name>
+            <Code>4310200</Code>
+            <MaxInt>2</MaxInt>
+          </Area>
+        </Pref>
+      </Observation>
+    </Intensity>
+  </Body>
+</Report>

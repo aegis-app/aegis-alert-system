@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  🧪 フィクスチャ: 津波警報・注意報・予報 VTSE41 (DMDSS 経由想定)
+  気象庁防災情報XMLの公式フォーマット仕様に基づいて作成した合成電文。
+  発表時刻と区域は P2P の p2p-552.json と同一にそろえ、経路間の同一視
+  (発表時刻+区域名) をテストするために使う。
+  ⚠️ DMDSS 経由の実電文での検証は残タスク (DESIGN.md §19)
+-->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/" xmlns:jmx_ib="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+  <Control>
+    <Title>津波警報・注意報・予報</Title>
+    <DateTime>2026-11-19T06:44:00+09:00</DateTime>
+    <Status>通常</Status>
+    <EditorialOffice>気象庁本庁</EditorialOffice>
+    <PublishingOffice>気象庁</PublishingOffice>
+  </Control>
+  <Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+    <Title>津波注意報</Title>
+    <ReportDateTime>2026-11-19T06:44:00+09:00</ReportDateTime>
+    <TargetDateTime>2026-11-19T06:44:00+09:00</TargetDateTime>
+    <EventID>20261119064100</EventID>
+    <Serial>1</Serial>
+    <InfoType>発表</InfoType>
+    <InfoKind>津波警報・注意報・予報</InfoKind>
+    <InfoKindVersion>1.0_1</InfoKindVersion>
+    <Headline>
+      <Text>津波注意報を発表しました。</Text>
+    </Headline>
+  </Head>
+  <Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/">
+    <Tsunami>
+      <Forecast>
+        <Area>
+          <Name>宮崎県沿岸</Name>
+          <Code>71</Code>
+          <Category>
+            <Kind>
+              <Status>発表</Status>
+              <Name>津波注意報</Name>
+              <Code>52</Code>
+            </Kind>
+          </Category>
+          <FirstHeight>
+            <ArrivalTime>2026-11-19T07:10:00+09:00</ArrivalTime>
+          </FirstHeight>
+          <MaxHeight>
+            <jmx_eb:Height type="予想される津波の高さ" description="1m">1</jmx_eb:Height>
+          </MaxHeight>
+        </Area>
+        <Area>
+          <Name>鹿児島県東部</Name>
+          <Code>72</Code>
+          <Category>
+            <Kind>
+              <Status>発表</Status>
+              <Name>津波注意報</Name>
+              <Code>52</Code>
+            </Kind>
+          </Category>
+          <FirstHeight>
+            <ArrivalTime>2026-11-19T07:20:00+09:00</ArrivalTime>
+            <Condition>第1波の到達を確認</Condition>
+          </FirstHeight>
+          <MaxHeight>
+            <jmx_eb:Height type="予想される津波の高さ" description="1m">1</jmx_eb:Height>
+          </MaxHeight>
+        </Area>
+      </Forecast>
+    </Tsunami>
+  </Body>
+</Report>
