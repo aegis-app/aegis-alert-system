@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  🧪 フィクスチャ: 緊急地震速報（警報）VXSE43 (DMDSS 経由想定)
+  気象庁防災情報XMLの公式フォーマット仕様に基づいて作成した合成電文。
+  地域ごとの Kind が「緊急地震速報（警報）」になる形と、震度文字列
+  (5強 / 6弱) の変換をテストする。
+  ⚠️ DMDSS 経由の実電文での検証は残タスク (DESIGN.md §19)
+-->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/" xmlns:jmx_ib="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+  <Control>
+    <Title>緊急地震速報（警報）</Title>
+    <DateTime>2024-01-01T16:11:05+09:00</DateTime>
+    <Status>通常</Status>
+    <EditorialOffice>気象庁本庁</EditorialOffice>
+    <PublishingOffice>気象庁</PublishingOffice>
+  </Control>
+  <Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+    <Title>緊急地震速報（警報）</Title>
+    <ReportDateTime>2024-01-01T16:11:05+09:00</ReportDateTime>
+    <TargetDateTime>2024-01-01T16:10:20+09:00</TargetDateTime>
+    <EventID>20240101161020</EventID>
+    <Serial>8</Serial>
+    <InfoType>発表</InfoType>
+    <InfoKind>緊急地震速報</InfoKind>
+    <InfoKindVersion>1.0_1</InfoKindVersion>
+    <Headline>
+      <Text>石川県能登地方で地震　強い揺れに警戒</Text>
+    </Headline>
+  </Head>
+  <Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/">
+    <Earthquake>
+      <OriginTime>2024-01-01T16:10:20+09:00</OriginTime>
+      <ArrivalTime>2024-01-01T16:10:20+09:00</ArrivalTime>
+      <Hypocenter>
+        <Area>
+          <Name>石川県能登地方</Name>
+          <Code type="震央地名">361</Code>
+          <jmx_eb:Coordinate description="石川県能登地方">+37.5+137.3-15000/</jmx_eb:Coordinate>
+          <ReduceName>能登地方</ReduceName>
+        </Area>
+      </Hypocenter>
+      <jmx_eb:Magnitude type="Mj" description="M7.4">7.4</jmx_eb:Magnitude>
+    </Earthquake>
+    <Intensity>
+      <Forecast>
+        <Pref>
+          <Name>石川県</Name>
+          <Code>17</Code>
+          <Area>
+            <Name>石川県能登</Name>
+            <Code>1710000</Code>
+            <Category>
+              <Kind>
+                <Status>通常</Status>
+                <Name>緊急地震速報（警報）</Name>
+                <Code>11</Code>
+                <Condition>強い揺れに警戒</Condition>
+              </Kind>
+            </Category>
+            <ForecastInt>
+              <From>7</From>
+              <To>7</To>
+            </ForecastInt>
+            <ArrivalTime>2024-01-01T16:10:50+09:00</ArrivalTime>
+          </Area>
+        </Pref>
+        <Pref>
+          <Name>新潟県</Name>
+          <Code>15</Code>
+          <Area>
+            <Name>新潟県上越</Name>
+            <Code>1510300</Code>
+            <Category>
+              <Kind>
+                <Status>通常</Status>
+                <Name>緊急地震速報（警報）</Name>
+                <Code>11</Code>
+                <Condition>強い揺れに警戒</Condition>
+              </Kind>
+            </Category>
+            <ForecastInt>
+              <From>5強</From>
+              <To>6弱</To>
+            </ForecastInt>
+            <ArrivalTime>2024-01-01T16:11:40+09:00</ArrivalTime>
+          </Area>
+        </Pref>
+      </Forecast>
+    </Intensity>
+  </Body>
+</Report>

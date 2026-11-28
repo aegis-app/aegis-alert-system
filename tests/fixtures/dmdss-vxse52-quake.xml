@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  🧪 フィクスチャ: 震源に関する情報 VXSE52 (DMDSS 経由想定)
+  気象庁防災情報XMLの公式フォーマット仕様に基づいて作成した合成電文。
+  対象は 2026-11-19 06:41 熊本県天草・芦北地方の地震 (VXSE51 / VXSE53 と
+  同一 EventID)。津波の見通しは ForecastComment の定型文から判定する。
+  ⚠️ DMDSS 経由の実電文での検証は残タスク (DESIGN.md §19)
+-->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/" xmlns:jmx_ib="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+  <Control>
+    <Title>震源に関する情報</Title>
+    <DateTime>2026-11-19T06:43:00+09:00</DateTime>
+    <Status>通常</Status>
+    <EditorialOffice>気象庁本庁</EditorialOffice>
+    <PublishingOffice>気象庁</PublishingOffice>
+  </Control>
+  <Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+    <Title>震源に関する情報</Title>
+    <ReportDateTime>2026-11-19T06:43:00+09:00</ReportDateTime>
+    <TargetDateTime>2026-11-19T06:43:00+09:00</TargetDateTime>
+    <EventID>20261119064100</EventID>
+    <Serial>1</Serial>
+    <InfoType>発表</InfoType>
+    <InfoKind>地震情報</InfoKind>
+    <InfoKindVersion>1.0_1</InfoKindVersion>
+    <Headline>
+      <Text>１９日０６時４１分ころ、地震がありました。</Text>
+    </Headline>
+  </Head>
+  <Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/">
+    <Earthquake>
+      <OriginTime>2026-11-19T06:41:00+09:00</OriginTime>
+      <ArrivalTime>2026-11-19T06:41:00+09:00</ArrivalTime>
+      <Hypocenter>
+        <Area>
+          <Name>熊本県天草・芦北地方</Name>
+          <Code type="震央地名">431</Code>
+          <jmx_eb:Coordinate description="熊本県天草・芦北地方">+32.3+130.4-10000/</jmx_eb:Coordinate>
+          <ReduceName>天草・芦北</ReduceName>
+        </Area>
+      </Hypocenter>
+      <jmx_eb:Magnitude type="Mj" description="M2.8">2.8</jmx_eb:Magnitude>
+    </Earthquake>
+    <Comments>
+      <ForecastComment>
+        <Text>この地震による津波の心配はありません。</Text>
+        <Code>0215</Code>
+      </ForecastComment>
+    </Comments>
+  </Body>
+</Report>

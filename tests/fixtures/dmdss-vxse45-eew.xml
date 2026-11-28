@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  🧪 フィクスチャ: 緊急地震速報（地震動予報）VXSE45 (DMDSS 経由想定)
+  気象庁防災情報XMLの公式フォーマット仕様に基づいて作成した合成電文。
+  対象イベントは 2026-11-26 08:56 熊本県天草・芦北地方 (Wolfx の
+  wolfx-eew-kumamoto-20261126-final.json と同一イベント) で、経路間の
+  同一視 (baseKey = eew-id:<EventID>) をテストするためにそろえてある。
+  ⚠️ DMDSS 経由の実電文での検証は残タスク (DESIGN.md §19)
+-->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/" xmlns:jmx_ib="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+  <Control>
+    <Title>緊急地震速報（予報）</Title>
+    <DateTime>2026-11-26T08:57:19+09:00</DateTime>
+    <Status>通常</Status>
+    <EditorialOffice>気象庁本庁</EditorialOffice>
+    <PublishingOffice>気象庁</PublishingOffice>
+  </Control>
+  <Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+    <Title>緊急地震速報（第４報）</Title>
+    <ReportDateTime>2026-11-26T08:57:19+09:00</ReportDateTime>
+    <TargetDateTime>2026-11-26T08:56:40+09:00</TargetDateTime>
+    <EventID>20261126085642</EventID>
+    <Serial>4</Serial>
+    <InfoType>発表</InfoType>
+    <InfoKind>緊急地震速報</InfoKind>
+    <InfoKindVersion>1.0_1</InfoKindVersion>
+    <Headline>
+      <Text></Text>
+    </Headline>
+  </Head>
+  <Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/">
+    <Earthquake>
+      <OriginTime>2026-11-26T08:56:40+09:00</OriginTime>
+      <ArrivalTime>2026-11-26T08:56:40+09:00</ArrivalTime>
+      <Hypocenter>
+        <Area>
+          <Name>熊本県天草・芦北地方</Name>
+          <Code type="震央地名">431</Code>
+          <jmx_eb:Coordinate description="熊本県天草・芦北地方">+32.3+130.5-10000/</jmx_eb:Coordinate>
+          <ReduceName>天草・芦北</ReduceName>
+        </Area>
+      </Hypocenter>
+      <jmx_eb:Magnitude type="Mj" description="M2.9">2.9</jmx_eb:Magnitude>
+    </Earthquake>
+    <Intensity>
+      <Forecast>
+        <Pref>
+          <Name>熊本県</Name>
+          <Code>43</Code>
+          <Area>
+            <Name>熊本県熊本地方</Name>
+            <Code>4310000</Code>
+            <Category>
+              <Kind>
+                <Status>通常</Status>
+                <Name>緊急地震速報（予報）</Name>
+                <Code>10</Code>
+                <Condition>強い揺れに警戒</Condition>
+              </Kind>
+            </Category>
+            <ForecastInt>
+              <From>3</From>
+              <To>3</To>
+            </ForecastInt>
+            <ArrivalTime>2026-11-26T08:57:30+09:00</ArrivalTime>
+          </Area>
+          <Area>
+            <Name>熊本県天草・芦北地方</Name>
+            <Code>4310200</Code>
+            <Category>
+              <Kind>
+                <Status>通常</Status>
+                <Name>緊急地震速報（予報）</Name>
+                <Code>10</Code>
+                <Condition>強い揺れに警戒</Condition>
+              </Kind>
+            </Category>
+            <ForecastInt>
+              <From>3</From>
+              <To>4</To>
+            </ForecastInt>
+            <ArrivalTime>2026-11-26T08:57:10+09:00</ArrivalTime>
+          </Area>
+        </Pref>
+        <Pref>
+          <Name>鹿児島県</Name>
+          <Code>46</Code>
+          <Area>
+            <Name>鹿児島県薩摩地方</Name>
+            <Code>4610000</Code>
+            <Category>
+              <Kind>
+                <Status>通常</Status>
+                <Name>緊急地震速報（予報）</Name>
+                <Code>10</Code>
+                <Condition>強い揺れに警戒</Condition>
+              </Kind>
+            </Category>
+            <ForecastInt>
+              <From>2</From>
+              <To>3</To>
+            </ForecastInt>
+            <ArrivalTime>2026-11-26T08:58:10+09:00</ArrivalTime>
+          </Area>
+        </Pref>
+      </Forecast>
+    </Intensity>
+    <NextAdvisory>この緊急地震速報（予報）は最終報です</NextAdvisory>
+    <Comments>
+      <FreeFormComment></FreeFormComment>
+    </Comments>
+  </Body>
+</Report>

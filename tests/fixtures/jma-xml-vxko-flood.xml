@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+⚠️ 代替フィクスチャ (実物ではない): 調査時点 (2026-11-26) の随時・長期
+フィード内に指定河川洪水予報 (VXKO) の実電文が無かったため、気象庁
+「洪水予報 XML の解説」(洪水予報担当、dmdata.jp/docs/jma/manual/0281-0281.pdf)
+のタグ構成・コード表 (表1)・記述例に厳密に従って構成した。
+標題の例「小貝川氾濫注意情報」、共同発表官署の例「下館河川事務所
+水戸地方気象台」も同解説の記載例に基づく。
+-->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Control>
+<Title>指定河川洪水予報</Title>
+<DateTime>2026-08-29T00:10:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>水戸地方気象台</EditorialOffice>
+<PublishingOffice>下館河川事務所 水戸地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>小貝川氾濫警戒情報</Title>
+<ReportDateTime>2026-08-29T09:10:00+09:00</ReportDateTime>
+<TargetDateTime>2026-08-29T09:10:00+09:00</TargetDateTime>
+<EventID>8302060001</EventID>
+<InfoType>発表</InfoType>
+<Serial>2</Serial>
+<InfoKind>指定河川洪水予報</InfoKind>
+<InfoKindVersion>1.1_1</InfoKindVersion>
+<Headline>
+<Text>小貝川の三谷水位観測所（筑西市）では、氾濫危険水位に到達する見込みです。</Text>
+<Information type="指定河川洪水予報（予報区域）">
+<Item>
+<Kind>
+<Name>氾濫警戒情報</Name>
+<Code>30</Code>
+<Condition>洪水警報（発表）</Condition>
+</Kind>
+<Areas codeType="指定河川洪水予報（予報区域）">
+<Area>
+<Name>小貝川</Name>
+<Code>8302060001</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+<Information type="指定河川洪水予報（河川）">
+<Item>
+<Kind>
+<Name>氾濫警戒情報</Name>
+<Code>30</Code>
+<Condition>洪水警報（発表）</Condition>
+</Kind>
+<Areas codeType="河川">
+<Area>
+<Name>小貝川</Name>
+<Code>8302060001</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+<Information type="指定河川洪水予報（府県予報区等）">
+<Item>
+<Kind>
+<Name>氾濫警戒情報</Name>
+<Code>30</Code>
+<Condition>洪水警報（発表）</Condition>
+</Kind>
+<Areas codeType="気象情報／府県予報区・細分区域等">
+<Area>
+<Name>茨城県</Name>
+<Code>080000</Code>
+</Area>
+</Areas>
+</Item>
+</Information>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<Warning type="指定河川洪水予報">
+<Item>
+<Kind>
+<Property>
+<Type>主文</Type>
+<Text>【警戒レベル３相当】これは、高齢者等避難の発令の目安です。小貝川の三谷水位観測所（筑西市）では、２９日１０時頃に、「氾濫危険水位」に到達する見込みです。小貝川では堤防決壊等による氾濫のおそれがあり、筑西市、下妻市では浸水するおそれがあります。市町村からの避難情報に十分注意するとともに、適切な防災行動をとって下さい。</Text>
+</Property>
+</Kind>
+<Areas codeType="河川">
+<Area>
+<Name>小貝川</Name>
+<Code>8302060001</Code>
+</Area>
+</Areas>
+<Stations>
+<Station>
+<Name>三谷</Name>
+<Code type="水位観測所">083020600001</Code>
+<Location>筑西市</Location>
+</Station>
+</Stations>
+</Item>
+</Warning>
+<MeteorologicalInfos type="水位・流量情報">
+<MeteorologicalInfo>
+<TimeSeriesInfo>
+<TimeDefines>
+<TimeDefine timeId="1">
+<DateTime>2026-08-29T09:00:00+09:00</DateTime>
+<Name>現況</Name>
+</TimeDefine>
+<TimeDefine timeId="2">
+<DateTime>2026-08-29T10:00:00+09:00</DateTime>
+<Name>１時間後</Name>
+</TimeDefine>
+</TimeDefines>
+<Item>
+<Kind>
+<Name>水位</Name>
+<Property>
+<Type>水位</Type>
+<WaterLevelPart>
+<jmx_eb:WaterLevel type="水位" unit="m" refID="1" condition="上昇">4.20</jmx_eb:WaterLevel>
+<jmx_eb:WaterLevel type="レベル" refID="1">3</jmx_eb:WaterLevel>
+<jmx_eb:WaterLevel type="水位" unit="m" refID="2" condition="正常">4.80</jmx_eb:WaterLevel>
+<jmx_eb:WaterLevel type="レベル" refID="2">4</jmx_eb:WaterLevel>
+</WaterLevelPart>
+</Property>
+</Kind>
+<Station>
+<Name>三谷</Name>
+<Code type="水位観測所">083020600001</Code>
+<Location>筑西市</Location>
+</Station>
+</Item>
+</TimeSeriesInfo>
+</MeteorologicalInfo>
+</MeteorologicalInfos>
+<OfficeInfo>
+<Office type="国土交通省">
+<Name>下館河川事務所</Name>
+<ContactInfo>下館河川事務所（河川関係）</ContactInfo>
+</Office>
+<Office type="気象庁">
+<Name>水戸地方気象台</Name>
+<ContactInfo>水戸地方気象台（気象関係）</ContactInfo>
+</Office>
+</OfficeInfo>
+</Body>
+</Report>
