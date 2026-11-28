@@ -20,6 +20,8 @@ import type {
   EventKind,
   HeatDraft,
   HeatEvent,
+  QuakeDraft,
+  QuakeEvent,
   SedimentDraft,
   SedimentEvent,
   SourceId,
@@ -222,6 +224,102 @@ function complementAreaFields(
     // 📳 areaScales は全有無ではなく要素単位でマージし、scaleTo を
     // 持つ側 (556) の値が勝者の null に負けて落ちないようにする
     areaScales: mergeAreaScales(keep.areaScales, fill.areaScales),
+  };
+}
+
+// 🌍 地震の段階順位 (変換側 convert/p2p.ts の QUAKE_TYPE_RANK と同じ規則。
+// 詳細な報ほど大きい)
+const QUAKE_TYPE_RANK: Record<string, number> = {
+  DetailScale: 4,
+  ScaleAndDestination: 3,
+  Foreign: 3,
+  Destination: 2,
+  ScalePrompt: 1,
+};
+
+// 🌍 地震の統合: 保存済みイベントは複数報 (震度速報→詳細報) や複数経路
+// (P2P / DMDSS) の取り込みで蓄積した内容を持つ。一方、再配信のたびに
+// 変換される下書きは、その回の履歴窓に残っていた電文だけから作られる
+// ため、窓の構成 (含まれる電文の部分集合) や並び順で points の欠落・
+// 順序違いが生じ、生の下書きとの単純比較では「実質的な変化がないのに
+// 署名が違う」事態になる (2026-11-28 に 2日前の地震が再通知された
+// 事象の原因。DESIGN.md 判断記録 5)。
+// そのため地震は下書きの総取りにせず、変換側 buildQuakeEvent と同じ
+// 統合規則で保存済みイベントへ畳み込んでから署名比較する:
+// - 観測点は和集合 (同一地点は最大震度を残す)。並びは保存済み側を
+//   基準に、下書きだけが持つ地点を後ろへ足すため、再配信では保存済み
+//   と完全一致する
+// - prefScales / topPoint は統合後の観測点から変換側と同じ規則で作り直す
+// - 代表スカラー (主電文の ID・発表時刻・段階・マグニチュード等) は
+//   段階の進んだ側、同段階では発表が新しい側から取る。遅れて届いた
+//   下位段階の電文が確定値を巻き戻すことはない。主側で欠けた値は
+//   従側から補う (変換側の pick と同じ考え方)
+// - 津波の見通しは変換側と同じく確定値 (Checking / Unknown でない値)
+//   を優先する
+// ⚠️ 和集合のため、訂正電文による観測点の削除や震度の引き下げは伝播
+// しない (変換側の「同一地点は最大震度」規則と同じ単調蓄積の割り切り)
+function mergeQuakeDraft(existing: QuakeEvent, draft: QuakeDraft): QuakeDraft {
+  const pointKey = (pt: QuakeDraft["points"][number]): string =>
+    `${pt.pref}|${pt.name}|${pt.isArea ? "area" : "point"}`;
+  const pointMap = new Map<string, QuakeDraft["points"][number]>();
+  for (const pt of existing.points) pointMap.set(pointKey(pt), { ...pt });
+  for (const pt of draft.points) {
+    const prev = pointMap.get(pointKey(pt));
+    if (!prev || pt.scale > prev.scale) pointMap.set(pointKey(pt), { ...pt });
+  }
+  const points = [...pointMap.values()];
+  const maxScale = Math.max(existing.maxScale, draft.maxScale);
+  // 📳 都道府県別の最大震度 (降順)。同点の並びは観測点の出現順で、
+  // 保存済みと同内容の再配信では保存済みの prefScales と一致する
+  const prefMax = new Map<string, number>();
+  for (const pt of points) {
+    if (!pt.pref) continue;
+    prefMax.set(pt.pref, Math.max(prefMax.get(pt.pref) ?? 0, pt.scale));
+  }
+  const prefScales = [...prefMax.entries()]
+    .map(([pref, scale]) => ({ pref, scale }))
+    .sort((a, b) => b.scale - a.scale);
+  // 📳 最大震度を観測した地点 (地域代表より観測点を優先。変換側と同じ)
+  const atMax = points.filter((pt) => pt.scale === maxScale);
+  const top = atMax.find((pt) => !pt.isArea) ?? atMax[0];
+  // 📝 代表スカラーを取る側の決定
+  const draftRank = QUAKE_TYPE_RANK[draft.issueType] ?? 0;
+  const existingRank = QUAKE_TYPE_RANK[existing.issueType] ?? 0;
+  const draftWins =
+    draftRank !== existingRank ? draftRank > existingRank : draft.announcedTime >= existing.announcedTime;
+  const main: QuakeDraft | QuakeEvent = draftWins ? draft : existing;
+  const sub: QuakeDraft | QuakeEvent = draftWins ? existing : draft;
+  // 🌊 津波の見通しは確定値を優先する
+  const determined = (k: string): boolean => k !== "Checking" && k !== "Unknown";
+  const tsunamiKind = determined(main.tsunamiKind)
+    ? main.tsunamiKind
+    : determined(sub.tsunamiKind)
+      ? sub.tsunamiKind
+      : main.tsunamiKind;
+  // 📝 主側で欠けている値は従側から補う
+  const fill = <T,>(v: T | null, w: T | null): T | null => (v !== null ? v : w);
+  return {
+    kind: "quake",
+    key: draft.key,
+    telegramId: main.telegramId,
+    time: main.time,
+    announcedTime: main.announcedTime,
+    originTime: fill(main.originTime, sub.originTime),
+    hypocenter: main.hypocenter !== "" ? main.hypocenter : sub.hypocenter,
+    magnitude: fill(main.magnitude, sub.magnitude),
+    depthKm: fill(main.depthKm, sub.depthKm),
+    maxScale,
+    tsunamiKind,
+    tsunamiText: fill(main.tsunamiText, sub.tsunamiText),
+    foreign: main.foreign,
+    issueType: main.issueType,
+    issueCorrect: main.issueCorrect,
+    lat: fill(main.lat, sub.lat),
+    lon: fill(main.lon, sub.lon),
+    topPoint: top ? top.name || top.pref || null : null,
+    topPointIsArea: top ? top.isArea : false,
+    prefScales,
+    points,
   };
 }
 
@@ -540,8 +638,13 @@ export class EventStore {
       return { event: existing, change: "none" };
     }
 
+    // 🌍 地震は下書きの総取りではなく保存済みイベントへ統合してから
+    // 候補にする (mergeQuakeDraft 参照)。統合結果が保存済みと一致すれば
+    // 署名も一致し、変化なしとして配信されない
+    const effectiveDraft =
+      draft.kind === "quake" && existing.kind === "quake" ? mergeQuakeDraft(existing, draft) : draft;
     const candidate = {
-      ...draft,
+      ...effectiveDraft,
       ...(stickyFinal !== null ? { isFinal: stickyFinal } : {}),
       ...(stickyCancelled !== null ? { cancelled: stickyCancelled } : {}),
       // 📌 勝った下書きが WarnArea 由来フィールドを持たない場合は既存
