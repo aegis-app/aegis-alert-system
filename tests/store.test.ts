@@ -387,6 +387,264 @@ describe("quake key migration", () => {
   });
 });
 
+describe("quake re-delivery stability", () => {
+  // 📌 2026-11-28 の事象の再現形: 保存済みイベントは震度速報+詳細報の
+  // 統合で観測点 (地域代表を含む) を蓄積している。後続のポーリングで
+  // 履歴窓の構成が変わり、詳細報だけから作り直された下書きが届いても、
+  // 実質的な変化がないため更新扱いにしてはいけない
+  test("a subset re-delivery (detail report only) is 'none' and keeps accumulated points", (t) => {
+    pinClock(t);
+    const store = new EventStore();
+    const time = p2pTime(-60_000);
+    const key = `551:${time}|@35.7,139.7`;
+    const announced = p2pTime(-55_000);
+    const stationPoints: QuakeDraft["points"] = [
+      { pref: "熊本県", name: "芦北町芦北", scale: 30, isArea: false },
+      { pref: "熊本県", name: "水俣市牧ノ内", scale: 20, isArea: false },
+    ];
+    const full = quakeDraft({
+      key,
+      time,
+      announcedTime: announced,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [{ pref: "熊本県", scale: 30 }],
+      points: [...stationPoints, { pref: "熊本県", name: "熊本県天草・芦北", scale: 30, isArea: true }],
+    });
+    const first = store.ingest(full, "p2p");
+    assert.equal(first.change, "new");
+    tick(t, 30_000);
+    // 📌 速報が窓から脱落し、詳細報だけから作り直された下書き
+    const subset = quakeDraft({
+      key,
+      time,
+      announcedTime: announced,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [{ pref: "熊本県", scale: 30 }],
+      points: stationPoints,
+    });
+    const again = store.ingest(subset, "p2p");
+    assert.equal(again.change, "none");
+    assert.equal(again.event.updatedAt, first.event.updatedAt);
+    // 📌 蓄積した地域代表の観測点も失われない
+    assert.equal((again.event as { points: unknown[] }).points.length, 3);
+    assert.equal(store.getEvent(key)?.updatedAt, first.event.updatedAt);
+  });
+
+  test("a reordered re-delivery from another route is 'none' (route still recorded)", (t) => {
+    pinClock(t);
+    const store = new EventStore();
+    const time = p2pTime(-60_000);
+    const key = `551:${time}|@35.7,139.7`;
+    const points: QuakeDraft["points"] = [
+      { pref: "熊本県", name: "芦北町芦北", scale: 30, isArea: false },
+      { pref: "鹿児島県", name: "出水市高尾野", scale: 20, isArea: false },
+      { pref: "宮崎県", name: "延岡市北川町", scale: 20, isArea: false },
+    ];
+    const draft = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [
+        { pref: "熊本県", scale: 30 },
+        { pref: "鹿児島県", scale: 20 },
+        { pref: "宮崎県", scale: 20 },
+      ],
+      points,
+    });
+    const first = store.ingest(draft, "p2p");
+    tick(t, 30_000);
+    // 📌 DMDSS 経路は観測点をソートして作るため、同じ内容でも並びが違う
+    const reordered = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [
+        { pref: "熊本県", scale: 30 },
+        { pref: "宮崎県", scale: 20 },
+        { pref: "鹿児島県", scale: 20 },
+      ],
+      points: [...points].reverse(),
+    });
+    const again = store.ingest(reordered, "dmdss");
+    assert.equal(again.change, "none");
+    assert.equal(again.event.updatedAt, first.event.updatedAt);
+    assert.deepEqual([...(store.getEvent(key)?.sources ?? [])].sort(), ["dmdss", "p2p"]);
+  });
+
+  test("a late lower-stage report never rolls back confirmed values", (t) => {
+    pinClock(t);
+    const store = new EventStore();
+    const time = p2pTime(-60_000);
+    const key = `551:${time}|@35.7,139.7`;
+    const detail = quakeDraft({
+      key,
+      time,
+      announcedTime: p2pTime(-55_000),
+      magnitude: 4.0,
+      depthKm: 0,
+      maxScale: 30,
+      tsunamiKind: "None",
+    });
+    store.ingest(detail, "p2p");
+    tick(t, 30_000);
+    // 📌 遅れて届いた震度速報の下書き (値が未確定で、観測点は既存の部分集合)
+    const prompt = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      telegramId: "prompt-id",
+      issueType: "ScalePrompt",
+      magnitude: null,
+      depthKm: null,
+      lat: null,
+      lon: null,
+      maxScale: 30,
+      tsunamiKind: "Checking",
+    });
+    const r = store.ingest(prompt, "p2p");
+    assert.equal(r.change, "none");
+    const stored = store.getEvent(key) as { magnitude: number | null; issueType: string; tsunamiKind: string };
+    assert.equal(stored.magnitude, 4.0);
+    assert.equal(stored.issueType, "DetailScale");
+    assert.equal(stored.tsunamiKind, "None");
+  });
+
+  test("a re-delivery adds new observation points as 'updated'", (t) => {
+    pinClock(t);
+    const store = new EventStore();
+    const time = p2pTime(-60_000);
+    const key = `551:${time}|@35.7,139.7`;
+    const base = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [{ pref: "熊本県", scale: 30 }],
+      points: [{ pref: "熊本県", name: "芦北町芦北", scale: 30, isArea: false }],
+    });
+    const first = store.ingest(base, "p2p");
+    tick(t, 30_000);
+    const grown = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [
+        { pref: "熊本県", scale: 30 },
+        { pref: "鹿児島県", scale: 20 },
+      ],
+      points: [
+        { pref: "熊本県", name: "芦北町芦北", scale: 30, isArea: false },
+        { pref: "鹿児島県", name: "出水市高尾野", scale: 20, isArea: false },
+      ],
+    });
+    const r = store.ingest(grown, "p2p");
+    assert.equal(r.change, "updated");
+    assert.ok(r.event.updatedAt > first.event.updatedAt);
+    assert.equal((r.event as { points: unknown[] }).points.length, 2);
+  });
+
+  test("a scale increase on an existing point is 'updated'", (t) => {
+    pinClock(t);
+    const store = new EventStore();
+    const time = p2pTime(-60_000);
+    const key = `551:${time}|@35.7,139.7`;
+    const base = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      maxScale: 20,
+      topPoint: "芦北町芦北",
+      prefScales: [{ pref: "熊本県", scale: 20 }],
+      points: [{ pref: "熊本県", name: "芦北町芦北", scale: 20, isArea: false }],
+    });
+    const first = store.ingest(base, "p2p");
+    tick(t, 30_000);
+    const raised = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [{ pref: "熊本県", scale: 30 }],
+      points: [{ pref: "熊本県", name: "芦北町芦北", scale: 30, isArea: false }],
+    });
+    const r = store.ingest(raised, "p2p");
+    assert.equal(r.change, "updated");
+    assert.ok(r.event.updatedAt > first.event.updatedAt);
+    assert.equal((r.event as { maxScale: number }).maxScale, 30);
+  });
+
+  test("stage progression replaces the primary report values as 'updated'", (t) => {
+    pinClock(t);
+    const store = new EventStore();
+    const time = p2pTime(-60_000);
+    const key = `551:${time}|@35.7,139.7`;
+    const destination = quakeDraft({
+      key,
+      time,
+      announcedTime: time,
+      telegramId: "destination-id",
+      issueType: "Destination",
+      magnitude: null,
+      depthKm: null,
+      maxScale: 30,
+      prefScales: [{ pref: "熊本県", scale: 30 }],
+      points: [{ pref: "熊本県", name: "熊本県天草・芦北", scale: 30, isArea: true }],
+    });
+    store.ingest(destination, "p2p");
+    tick(t, 30_000);
+    const detail = quakeDraft({
+      key,
+      time,
+      announcedTime: p2pTime(-25_000),
+      issueType: "DetailScale",
+      magnitude: 4.0,
+      depthKm: 0,
+      maxScale: 30,
+      topPoint: "芦北町芦北",
+      prefScales: [{ pref: "熊本県", scale: 30 }],
+      points: [{ pref: "熊本県", name: "芦北町芦北", scale: 30, isArea: false }],
+    });
+    const r = store.ingest(detail, "p2p");
+    assert.equal(r.change, "updated");
+    const ev = r.event as { issueType: string; magnitude: number | null; points: unknown[] };
+    assert.equal(ev.issueType, "DetailScale");
+    assert.equal(ev.magnitude, 4.0);
+    // 📌 速報・詳細の観測点は和集合で残る
+    assert.equal(ev.points.length, 2);
+  });
+
+  test("a tsunami outlook change is 'updated', and a later 'Checking' never reverts it", (t) => {
+    pinClock(t);
+    const store = new EventStore();
+    const time = p2pTime(-60_000);
+    const key = `551:${time}|@35.7,139.7`;
+    const checking = quakeDraft({ key, time, announcedTime: time, tsunamiKind: "Checking" });
+    store.ingest(checking, "p2p");
+    tick(t, 30_000);
+    const warning = quakeDraft({ key, time, announcedTime: p2pTime(-25_000), tsunamiKind: "Warning" });
+    const r = store.ingest(warning, "p2p");
+    assert.equal(r.change, "updated");
+    assert.equal((r.event as { tsunamiKind: string }).tsunamiKind, "Warning");
+    tick(t, 30_000);
+    // 📌 同じ電文の再配信が未確定の見通しで作り直されても、確定した
+    // 見通しは巻き戻らない (発表時刻も同一 = 同一電文のため)
+    const stale = quakeDraft({ key, time, announcedTime: warning.announcedTime, tsunamiKind: "Checking" });
+    const again = store.ingest(stale, "p2p");
+    assert.equal(again.change, "none");
+    assert.equal((store.getEvent(key) as { tsunamiKind: string }).tsunamiKind, "Warning");
+  });
+});
+
 describe("warning snapshots", () => {
   test("disappeared areas are released once and removed; unfetched scopes are kept", (t) => {
     pinClock(t);
