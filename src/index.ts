@@ -5,11 +5,13 @@
 // 起動する。設定は環境変数 (config.ts)。配信は通常リスナー (私設
 // ネットワーク内) が本線で、A2S_PUBLIC_PORT が設定された場合のみ
 // 公開用リスナー (127.0.0.1、中継先) も起動する。
-// 取り込み (Phase 2) と変換 (Phase 3) は後続フェーズで順に配線する。
+// 変換とマスターデータは Phase 3 で配線済み。取り込み (Phase 2) は
+// 後続フェーズで配線する。
 // 終了時はサーバーを閉じ、保持イベントを保存してから終わる。
 import { loadConfig } from "./config.js";
 import { AccessLogger } from "./access-log.js";
 import { MasterDataService } from "./master.js";
+import { registerMasterData } from "./master-data.js";
 import { createA2sServer, createPublicA2sServer, type A2sServer } from "./server.js";
 import { EventStore } from "./store.js";
 import { EVENT_KINDS } from "./types.js";
@@ -32,9 +34,11 @@ function main(): void {
 
   const accessLog = new AccessLogger(config.accessLogFile);
 
-  // 📚 マスターデータ。Phase 1 では登録の仕組みと索引までで、
-  // データセット本体 (静的ファイルと AMeDAS) は Phase 3 で登録する
+  // 📚 マスターデータ。静的データセット (data/master/) を読み込んで
+  // 登録し、AMeDAS は実行時取得の供給者として登録して取得を開始する
   const master = new MasterDataService();
+  const { amedas } = registerMasterData(master);
+  amedas.start();
 
   // 📡 配信サーバー。公開リスナーとは SSE ハブを共有し、どちらの
   // 接続にも配信が届くようにする。
@@ -98,11 +102,12 @@ function main(): void {
     });
   }
 
-  // 🛑 終了処理: サーバーを閉じる → 保持イベントを保存する
+  // 🛑 終了処理: AMeDAS の日次更新を止め、サーバーを閉じる → 保持イベントを保存する
   let shuttingDown = false;
   const shutdown = (signal: string): void => {
     if (shuttingDown) return;
     shuttingDown = true;
+    amedas.stop();
     logInfo(`${signal} を受信したため終了します`);
     const closers = publicA2s ? [a2s.close(), publicA2s.close()] : [a2s.close()];
     void Promise.allSettled(closers).finally(() => {

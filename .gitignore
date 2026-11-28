@@ -1,4 +1,7 @@
 node_modules/
 dist/
 .env
-data/
+data/*
+# 📚 マスターデータ (data/master/) は配布物なので版管理に含める
+!data/master/
+!data/master/**
