@@ -1,20 +1,21 @@
 // ==========================================
 // 🚀 A.A.S (Aegis Alert System) エントリポイント
 // ==========================================
-// 📌 ハブ核 (EventStore / REST / SSE / マスターデータ) を配線して
-// 起動する。設定は環境変数 (config.ts)。配信は通常リスナー (私設
-// ネットワーク内) が本線で、A2S_PUBLIC_PORT が設定された場合のみ
-// 公開用リスナー (127.0.0.1、中継先) も起動する。
-// 変換とマスターデータは Phase 3 で配線済み。取り込み (Phase 2) は
-// 後続フェーズで配線する。
-// 終了時はサーバーを閉じ、保持イベントを保存してから終わる。
+// 📌 ハブ核 (EventStore / REST / SSE / マスターデータ) と取り込み
+// (ハブ) を配線して起動する。設定は環境変数 (config.ts)。配信は
+// 通常リスナー (私設ネットワーク内) が本線で、A2S_PUBLIC_PORT が
+// 設定された場合のみ公開用リスナー (127.0.0.1、中継先) も起動する。
+// 取り込みの新規・更新イベントは SSE ハブ経由で両リスナーへ届く。
+// 終了時は取り込みを止め、サーバーを閉じ、保持イベントを保存して
+// から終わる。
 import { loadConfig } from "./config.js";
 import { AccessLogger } from "./access-log.js";
+import { Hub } from "./hub.js";
 import { MasterDataService } from "./master.js";
 import { registerMasterData } from "./master-data.js";
 import { createA2sServer, createPublicA2sServer, type A2sServer } from "./server.js";
 import { EventStore } from "./store.js";
-import { EVENT_KINDS } from "./types.js";
+import { EVENT_KINDS, type A2sEvent } from "./types.js";
 import { logInfo, logWarn } from "./util.js";
 
 // 🏷️ バージョン (package.json の version と一致させる)
@@ -40,10 +41,31 @@ function main(): void {
   const { amedas } = registerMasterData(master);
   amedas.start();
 
+  // 🎛️ 取り込みハブ。配信先 (SSE の broadcast) はサーバー生成後に
+  // 差し込む (ハブとサーバーの相互参照を避けるため、受け渡し口を
+  // 先に用意して後から差し替える)
+  let broadcast: (ev: A2sEvent) => void = () => undefined;
+  const hub = new Hub(store, {
+    p2pEewIntervalMs: config.p2pEewIntervalMs,
+    p2pQuakeIntervalMs: config.p2pQuakeIntervalMs,
+    p2pTsunamiIntervalMs: config.p2pTsunamiIntervalMs,
+    wolfxHttpIntervalMs: config.wolfxHttpIntervalMs,
+    jmaWarningIntervalMs: config.jmaWarningIntervalMs,
+    jmaTyphoonIntervalMs: config.jmaTyphoonIntervalMs,
+    jmaXmlIntervalMs: config.jmaXmlIntervalMs,
+    riverIntervalMs: config.riverIntervalMs,
+    riverConcurrency: config.riverConcurrency,
+    riverSystemDelayMs: config.riverSystemDelayMs,
+    heatIntervalMs: config.heatIntervalMs,
+    jmaXmlSeenFile: config.jmaXmlSeenFile,
+    dmdssApiKey: config.dmdssApiKey,
+    dmdssClassifications: config.dmdssClassifications,
+    onEvent: (ev) => broadcast(ev),
+  });
+
   // 📡 配信サーバー。公開リスナーとは SSE ハブを共有し、どちらの
   // 接続にも配信が届くようにする。
-  // 📊 経路別の健康状態は取り込み (Phase 2) が提供する。Phase 1 では
-  // 取り込みが無いため空を返す
+  // 📊 経路別の健康状態はハブが保持し、/v1/status の sources に載る
   const sharedDeps = {
     store,
     token: config.token,
@@ -57,10 +79,14 @@ function main(): void {
     corsOrigins: config.corsOrigins,
     master,
     version: VERSION,
-    statusProvider: (): Record<string, unknown> => ({}),
+    statusProvider: () => hub.status(),
     accessLog,
   };
   const a2s = createA2sServer(sharedDeps);
+  // 📣 ハブの配信先を本線サーバーの SSE ハブへ差し替える (公開
+  // リスナーは同じハブを共有するため、そちらにも届く)
+  broadcast = (ev) => a2s.broadcast(ev);
+  hub.start();
   const publicA2s: A2sServer | undefined =
     config.publicPort !== undefined
       ? createPublicA2sServer({ ...sharedDeps, sseHub: a2s.sseHub })
@@ -102,11 +128,13 @@ function main(): void {
     });
   }
 
-  // 🛑 終了処理: AMeDAS の日次更新を止め、サーバーを閉じる → 保持イベントを保存する
+  // 🛑 終了処理: 取り込みと AMeDAS の日次更新を止め、サーバーを閉じる
+  // → 保持イベントを保存する
   let shuttingDown = false;
   const shutdown = (signal: string): void => {
     if (shuttingDown) return;
     shuttingDown = true;
+    hub.stop();
     amedas.stop();
     logInfo(`${signal} を受信したため終了します`);
     const closers = publicA2s ? [a2s.close(), publicA2s.close()] : [a2s.close()];
